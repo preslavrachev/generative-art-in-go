@@ -3,6 +3,10 @@ This is the companion source code repository to my book, ["Generative Art in Go.
 - [Buy on Gumroad](https://gumroad.com/l/generative-art-in-golang)
 - [Buy on Leanpub](https://leanpub.com/generative-art-in-golang)
 
+# Demo
+
+To see what you will be able to do by the end of the book, make sure to check out this experimental [Web application](https://goart.netlify.app/) I built a couple of weeks ago. 
+
 # About the Book
 
 <img align="left" src="https://d2sofvawe08yqg.cloudfront.net/generative-art-in-golang/hero?1609949259" style="padding-right: 12px" width="33%">
