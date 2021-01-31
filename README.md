@@ -5,7 +5,7 @@ This is the companion source code repository to my book, ["Generative Art in Go.
 
 # Demo
 
-To see what you will be able to do by the end of the book, make sure to check out this experimental [Web application](https://goart.netlify.app/) I built a couple of weeks ago. 
+To see what you will be able to do by the end of the book, make sure to check out this experimental [Web application](https://goart.netlify.app/) I built a couple of weeks ago. It uses WebAssembly to generate beatiful imagery in the browser. And all that using Go code and the minimum JavaScript possible.
 
 # About the Book
 
