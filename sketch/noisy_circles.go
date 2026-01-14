@@ -11,28 +11,34 @@ import (
 	"github.com/fogleman/gg"
 )
 
-// AIDEV-NOTE: Params for generative noisy circles with radial gradients
+// AIDEV-NOTE: Params for generative noisy circles with radial gradients and flow fields
 
 type NoisyCirclesParams struct {
-	Width      int
-	Height     int
-	Step       float64
-	Precision  int
-	Diff       float64
-	NoiseAmt   float64
-	NoiseScale float64
-	Palette    []color.Color
-	Seed       int64
+	Width             int
+	Height            int
+	Step              float64
+	Precision         int
+	Diff              float64
+	NoiseAmt          float64
+	NoiseScale        float64
+	Palette           []color.Color
+	Seed              int64
+	UseFlowField      bool    // Enable flow field for color and rotation
+	FlowFieldScale    float64 // Scale factor for flow field noise (smaller = larger patterns)
+	FlowFieldStrength float64 // 0-1, how much flow affects rotation vs random noise
+	FillRatio         float64 // 0-1, probability that a circle is filled (0=all outlines, 1=all filled)
+	Inverted          bool    // Use white background with dark outlines
 }
 
 type NoisyCirclesSketch struct {
-	params    NoisyCirclesParams
-	dc        *gg.Context
-	gradients []gg.Gradient
-	noiseZs   []float64
-	perlin    *perlin.Perlin
-	m         float64
-	radius    float64
+	params     NoisyCirclesParams
+	dc         *gg.Context
+	gradients  []gg.Gradient
+	noiseZs    []float64
+	flowAngles []float64 // Flow field angles for each grid position
+	perlin     *perlin.Perlin
+	m          float64
+	radius     float64
 }
 
 func NewNoisyCircles(params NoisyCirclesParams) *NoisyCirclesSketch {
@@ -70,6 +76,7 @@ func (s *NoisyCirclesSketch) calculateDimensions() {
 func (s *NoisyCirclesSketch) createGradients() {
 	s.gradients = []gg.Gradient{}
 	s.noiseZs = []float64{}
+	s.flowAngles = []float64{}
 
 	for x := 0.0; x < s.m; x += s.params.Step {
 		for y := 0.0; y < s.m; y += s.params.Step {
@@ -78,8 +85,34 @@ func (s *NoisyCirclesSketch) createGradients() {
 
 			grad := gg.NewRadialGradient(gx, gy, 0, gx, gy, s.params.Step)
 
-			color1 := s.params.Palette[rand.Intn(len(s.params.Palette))]
-			color2 := s.params.Palette[rand.Intn(len(s.params.Palette))]
+			var color1, color2 color.Color
+
+			if s.params.UseFlowField {
+				// Calculate flow field angle at this position
+				// Perlin noise returns values roughly in [-1, 1], map to [0, 2π]
+				noiseVal := s.perlin.Noise2D(x*s.params.FlowFieldScale, y*s.params.FlowFieldScale)
+				flowAngle := (noiseVal + 1) * math.Pi // Map [-1,1] to [0, 2π]
+				s.flowAngles = append(s.flowAngles, flowAngle)
+
+				// Map flow angle to continuous position in palette [0, 1]
+				normalizedAngle := math.Mod(flowAngle, 2*math.Pi) / (2 * math.Pi)
+				palettePos := normalizedAngle * float64(len(s.params.Palette))
+
+				// Get two adjacent colors for smooth transition
+				idx1 := int(math.Floor(palettePos)) % len(s.params.Palette)
+				if idx1 < 0 {
+					idx1 += len(s.params.Palette)
+				}
+				idx2 := (idx1 + 1) % len(s.params.Palette)
+
+				color1 = s.params.Palette[idx1]
+				color2 = s.params.Palette[idx2]
+			} else {
+				// Random colors (original behavior)
+				color1 = s.params.Palette[rand.Intn(len(s.params.Palette))]
+				color2 = s.params.Palette[rand.Intn(len(s.params.Palette))]
+				s.flowAngles = append(s.flowAngles, 0) // Placeholder
+			}
 
 			grad.AddColorStop(0, color1)
 			grad.AddColorStop(1, color2)
@@ -91,7 +124,11 @@ func (s *NoisyCirclesSketch) createGradients() {
 }
 
 func (s *NoisyCirclesSketch) draw() {
-	s.dc.SetRGB(0.04, 0.04, 0.04)
+	if s.params.Inverted {
+		s.dc.SetRGB(1, 1, 1) // White background
+	} else {
+		s.dc.SetRGB(0.04, 0.04, 0.04) // Dark background
+	}
 	s.dc.Clear()
 
 	s.dc.Push()
@@ -104,15 +141,47 @@ func (s *NoisyCirclesSketch) draw() {
 		for y := 0.0; y < s.m; y += s.params.Step {
 			s.dc.Push()
 
-			s.dc.SetFillStyle(s.gradients[i])
+			// Decide whether to fill this circle based on FillRatio
+			shouldFill := rand.Float64() < s.params.FillRatio
+
+			if shouldFill {
+				s.dc.SetFillStyle(s.gradients[i])
+			}
 			s.dc.Translate(x, y)
 
-			noiseAngle := s.perlin.Noise2D(y+s.params.Step, x-y)
-			s.dc.Rotate(noiseAngle * 2 * math.Pi)
+			// Calculate rotation: blend flow field and noise based on FlowFieldStrength
+			var rotationAngle float64
+			if s.params.UseFlowField {
+				flowAngle := s.flowAngles[i]
+				noiseAngle := s.perlin.Noise2D(y+s.params.Step, x-y) * 2 * math.Pi
 
-			s.noisyCircle(s.radius, s.noiseZs[i], true)
+				// Blend between flow field and noise
+				rotationAngle = flowAngle*s.params.FlowFieldStrength +
+					noiseAngle*(1-s.params.FlowFieldStrength)
+			} else {
+				// Original random noise rotation
+				noiseAngle := s.perlin.Noise2D(y+s.params.Step, x-y)
+				rotationAngle = noiseAngle * 2 * math.Pi
+			}
 
-			s.dc.SetRGB(1, 1, 1)
+			s.dc.Rotate(rotationAngle)
+
+			// Draw main circle
+			if shouldFill {
+				s.noisyCircle(s.radius, s.noiseZs[i], true)
+			} else {
+				// Outline only: use gradient colors for stroke
+				s.dc.SetStrokeStyle(s.gradients[i])
+				s.dc.SetLineWidth(2)
+				s.noisyCircle(s.radius, s.noiseZs[i], false)
+			}
+
+			// Additional outline circles (always drawn)
+			if s.params.Inverted {
+				s.dc.SetRGB(0.04, 0.04, 0.04) // Dark outlines on white
+			} else {
+				s.dc.SetRGB(1, 1, 1) // White outlines on dark
+			}
 			s.dc.SetLineWidth(2)
 			s.noisyCircle(s.radius, s.noiseZs[i]+s.params.Diff, false)
 			s.noisyCircle(s.radius, s.noiseZs[i]+s.params.Diff*2, false)
