@@ -9,6 +9,7 @@ import (
 
 	"github.com/aquilax/go-perlin"
 	"github.com/fogleman/gg"
+	"github.com/preslavrachev/generative-art-in-go/util"
 )
 
 // AIDEV-NOTE: Params for generative noisy circles with radial gradients and flow fields
@@ -208,7 +209,7 @@ func (s *NoisyCirclesSketch) noisyCircle(r, noiseZ float64, fill bool) {
 		y := math.Sin(angle) * r
 
 		n := s.perlin.Noise3D(noiseScale*x, noiseScale*y, noiseZ)
-		n = mapRange(n, 0, 1, -noiseAmount, noiseAmount)
+		n = util.MapRange(n, 0, 1, -noiseAmount, noiseAmount)
 
 		points = append(points, [2]float64{x + n, y + n})
 	}
@@ -238,10 +239,6 @@ func (s *NoisyCirclesSketch) noisyCircle(r, noiseZ float64, fill bool) {
 		s.dc.FillPreserve()
 	}
 	s.dc.Stroke()
-}
-
-func mapRange(value, inMin, inMax, outMin, outMax float64) float64 {
-	return (value-inMin)/(inMax-inMin)*(outMax-outMin) + outMin
 }
 
 // DefaultPalette returns the color palette from the Processing sketch
