@@ -1,6 +1,6 @@
 module github.com/preslavrachev/generative-art-in-go
 
-go 1.15
+go 1.26
 
 require (
 	github.com/fogleman/gg v1.3.0

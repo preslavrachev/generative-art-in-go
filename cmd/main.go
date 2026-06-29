@@ -46,7 +46,7 @@ func main() {
 
 	rand.Seed(time.Now().Unix())
 
-	for i := 0; i < totalCycleCount; i++ {
+	for range totalCycleCount {
 		s.Update()
 	}
 

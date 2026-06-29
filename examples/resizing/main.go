@@ -25,8 +25,8 @@ func resizeImage(in image.Image, newWidth int, newHeight int) image.Image {
 
 	out := image.NewRGBA(image.Rect(0, 0, newWidth, newHeight))
 
-	for x := 0; x < newWidth; x++ {
-		for y := 0; y < newHeight; y++ {
+	for x := range newWidth {
+		for y := range newHeight {
 			projectedX := int(float64(x) * scalingRatioX)
 			projectedY := int(float64(y) * scalingRatioY)
 			out.Set(x, y, in.At(projectedX, projectedY))
