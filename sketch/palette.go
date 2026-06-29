@@ -67,7 +67,7 @@ func generateComplementary(baseHue float64, count int) []color.Color {
 			hue = complement + rand.Float64()*30 - 15
 		}
 
-		sat := 0.6 + rand.Float64()*0.3  // 60-90% saturation
+		sat := 0.6 + rand.Float64()*0.3   // 60-90% saturation
 		light := 0.5 + rand.Float64()*0.3 // 50-80% lightness
 
 		colors = append(colors, hslToRGB(hue, sat, light))
@@ -155,7 +155,7 @@ func generateMonochromatic(baseHue float64, count int) []color.Color {
 	for i := 0; i < count; i++ {
 		hue := baseHue + rand.Float64()*10 - 5 // Very slight hue variation
 
-		sat := 0.3 + rand.Float64()*0.5           // Varied saturation
+		sat := 0.3 + rand.Float64()*0.5              // Varied saturation
 		light := 0.3 + float64(i)*0.5/float64(count) // Gradient from dark to light
 
 		colors = append(colors, hslToRGB(hue, sat, light))
@@ -207,7 +207,7 @@ func generatePastel(count int) []color.Color {
 		hue := rand.Float64() * 360
 
 		sat := 0.25 + rand.Float64()*0.35 // Low saturation
-		light := 0.7 + rand.Float64()*0.2  // High lightness
+		light := 0.7 + rand.Float64()*0.2 // High lightness
 
 		colors = append(colors, hslToRGB(hue, sat, light))
 	}
@@ -221,7 +221,7 @@ func generateVibrant(count int) []color.Color {
 	for i := 0; i < count; i++ {
 		hue := rand.Float64() * 360
 
-		sat := 0.8 + rand.Float64()*0.2  // Very high saturation
+		sat := 0.8 + rand.Float64()*0.2     // Very high saturation
 		light := 0.45 + rand.Float64()*0.25 // Medium lightness
 
 		colors = append(colors, hslToRGB(hue, sat, light))
